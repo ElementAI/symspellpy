@@ -1,0 +1,31 @@
+version: 2
+jobs:
+  tests:
+    docker:
+      - image: circleci/python:3.6.6
+    steps:
+      - checkout
+
+      - run:
+          name: Setup Env
+          command: |
+            echo 'export PATH=$PATH:~/.local/bin' >> $BASH_ENV
+            sudo chmod -R 777 /usr/local
+      - run:
+          name: Install system dependencies and project requirements
+          command: |
+            make bootstrap
+            make install
+      - run:
+          name: Linting
+          command: make lint
+
+      - run:
+          name: Tests
+          command: make test
+
+workflows:
+  version: 2
+  tests:
+    jobs:
+      - tests

@@ -1,12 +1,13 @@
 import inspect
-from os import pardir, path
 import sys
 import unittest
+from os import pardir, path
 
-sys.path.append(path.realpath(path.join(__file__, *(path.pardir,) * 2)))
-from symspellpy.symspellpy import SymSpell, Verbosity
 
-class TestSymSpellPy(unittest.TestCase):
+from spellchecker.symspell import SymSpell, Verbosity
+
+
+class TestSpellChecker(unittest.TestCase):
     def runTest(self):
         print('\nRunning %s' % self.__class__.__name__)
         self.test_words_with_shared_prefix_should_retain_counts()
@@ -151,7 +152,7 @@ class TestSymSpellPy(unittest.TestCase):
         print('  - %s' % inspect.stack()[0][3])
         cwd = path.realpath(path.dirname(__file__))
         dictionary_path = path.realpath(path.join(
-            cwd, pardir, "symspellpy", "frequency_dictionary_en_82_765.txt"))
+            cwd, pardir, "spellchecker", "frequency_dictionary_en_82_765.txt"))
         query_path = path.join(cwd, "fortests", "noisy_query_en_1000.txt")
 
         edit_distance_max = 2
@@ -176,7 +177,7 @@ class TestSymSpellPy(unittest.TestCase):
         print('  - %s' % inspect.stack()[0][3])
         cwd = path.realpath(path.dirname(__file__))
         dictionary_path = path.realpath(path.join(
-            cwd, pardir, "symspellpy", "frequency_dictionary_en_82_765.txt"))
+            cwd, pardir, "spellchecker", "frequency_dictionary_en_82_765.txt"))
 
         edit_distance_max = 2
         prefix_length = 7
@@ -217,7 +218,7 @@ class TestSymSpellPy(unittest.TestCase):
         print('  - %s' % inspect.stack()[0][3])
         cwd = path.realpath(path.dirname(__file__))
         dictionary_path = path.realpath(path.join(
-            cwd, pardir, "symspellpy", "frequency_dictionary_en_82_765.txt"))
+            cwd, pardir, "spellchecker", "frequency_dictionary_en_82_765.txt"))
 
         edit_distance_max = 2
         prefix_length = 7
@@ -269,8 +270,9 @@ class TestSymSpellPy(unittest.TestCase):
         self.assertEqual(1, len(results))
         self.assertEqual(correction, results[0].term)
 
+
 if __name__ == "__main__":
     runner = unittest.TextTestRunner()
     suite = unittest.TestSuite()
-    suite.addTest(TestSymSpellPy())
+    suite.addTest(TestSpellChecker())
     runner.run(suite)
