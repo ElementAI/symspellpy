@@ -1,8 +1,0 @@
-[run]
-branch = true
-source =
-    symspellpy
-
-[report]
-exclude_lines =
-    if __name__ == .__main__.:

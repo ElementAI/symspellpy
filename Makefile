@@ -18,4 +18,4 @@ lint:
 	poetry run flake8 spellchecker tests
 
 test:
-	poetry run pytest --cov=neo4jdb --cov-report=term-missing -s tests
+	poetry run pytest --cov=spellchecker --cov-report=term-missing -s tests

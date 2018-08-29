@@ -4,7 +4,7 @@ import unittest
 from os import pardir, path
 
 
-from spellchecker.symspellpy import SymSpell, Verbosity
+from spellchecker.symspell import SymSpell, Verbosity
 
 
 class TestSymSpellPy(unittest.TestCase):
@@ -152,7 +152,7 @@ class TestSymSpellPy(unittest.TestCase):
         print('  - %s' % inspect.stack()[0][3])
         cwd = path.realpath(path.dirname(__file__))
         dictionary_path = path.realpath(path.join(
-            cwd, pardir, "symspellpy", "frequency_dictionary_en_82_765.txt"))
+            cwd, pardir, "spellchecker", "frequency_dictionary_en_82_765.txt"))
         query_path = path.join(cwd, "fortests", "noisy_query_en_1000.txt")
 
         edit_distance_max = 2
@@ -177,7 +177,7 @@ class TestSymSpellPy(unittest.TestCase):
         print('  - %s' % inspect.stack()[0][3])
         cwd = path.realpath(path.dirname(__file__))
         dictionary_path = path.realpath(path.join(
-            cwd, pardir, "symspellpy", "frequency_dictionary_en_82_765.txt"))
+            cwd, pardir, "spellchecker", "frequency_dictionary_en_82_765.txt"))
 
         edit_distance_max = 2
         prefix_length = 7
@@ -218,7 +218,7 @@ class TestSymSpellPy(unittest.TestCase):
         print('  - %s' % inspect.stack()[0][3])
         cwd = path.realpath(path.dirname(__file__))
         dictionary_path = path.realpath(path.join(
-            cwd, pardir, "symspellpy", "frequency_dictionary_en_82_765.txt"))
+            cwd, pardir, "spellchecker", "frequency_dictionary_en_82_765.txt"))
 
         edit_distance_max = 2
         prefix_length = 7
