@@ -7,7 +7,7 @@ from os import pardir, path
 from spellchecker.symspell import SymSpell, Verbosity
 
 
-class TestSymSpellPy(unittest.TestCase):
+class TestSpellChecker(unittest.TestCase):
     def runTest(self):
         print('\nRunning %s' % self.__class__.__name__)
         self.test_words_with_shared_prefix_should_retain_counts()
@@ -274,5 +274,5 @@ class TestSymSpellPy(unittest.TestCase):
 if __name__ == "__main__":
     runner = unittest.TextTestRunner()
     suite = unittest.TestSuite()
-    suite.addTest(TestSymSpellPy())
+    suite.addTest(TestSpellChecker())
     runner.run(suite)

@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "eai-spellchecker"
 version = "1.0.0"
-description = "Speel Checker Library"
+description = "Spell Checker Library"
 authors = ["Beagle Pie Team <beagle.pie@elementai.com>"]
 readme = "README.md"
 homepage = "https://github.com/ElementAI/eai-spellchecker/"
