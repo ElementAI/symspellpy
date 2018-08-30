@@ -15,7 +15,7 @@ install:
 	poetry develop
 
 lint:
-	poetry run flake8 spellchecker tests
+	poetry run flake8 spellchecker tests samples
 
 test:
 	poetry run pytest --cov=spellchecker --cov-report=term-missing -s tests

@@ -621,7 +621,7 @@ class SuggestItem(object):
             return self._distance < other.distance
 
     def __str__(self):
-        return "{}, {}, {}".format(self._term, self._distance, self._count)
+        return f"{self._term} - Count: {self._count} - Distance: {self._distance}"
 
     @property
     def term(self):
