@@ -2,7 +2,7 @@
 # Guy Dumais, 2018-08-30
 # Copyright (c) 2018 Element AI. All rights reserved.
 
-import os
+import pkg_resources
 
 from spellchecker.symspell import SymSpell, Verbosity  # import the module
 
@@ -16,8 +16,8 @@ def main():
     sym_spell = SymSpell(initial_capacity, max_edit_distance_dictionary,
                          prefix_length)
     # load dictionary
-    dictionary_path = os.path.join(os.path.dirname(__file__), '../spellchecker',
-                                   "frequency_dictionary_en_82_765.txt")
+    dictionary_path = pkg_resources.resource_filename('spellchecker', 'frequency_dictionary_en_82_765.txt')
+
     term_index = 0  # column of the term in the dictionary text file
     count_index = 1  # column of the term frequency in the dictionary text file
     if not sym_spell.load_dictionary(dictionary_path, term_index, count_index):
@@ -34,8 +34,7 @@ def main():
                                    max_edit_distance_lookup)
     # display suggestion term, term frequency, and edit distance
     for suggestion in suggestions:
-        print("{}, {}, {}".format(suggestion.term, suggestion.count,
-                                  suggestion.distance))
+        print(suggestion)
 
     # lookup suggestions for multi-word input strings (supports compound
     # splitting & merging)
