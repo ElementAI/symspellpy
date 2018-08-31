@@ -1,3 +1,4 @@
+import csv
 import sys
 from collections import defaultdict
 from enum import Enum
@@ -137,28 +138,65 @@ class SymSpell(object):
                 self._deletes[delete_hash] = [key]
         return True
 
-    def load_dictionary(self, corpus, term_index, count_index):
-        """Load multiple dictionary entries from a file of word/frequency
-        count pairs. Merges with any dictionary data already loaded.
+    class SpaceDelimitedFileIterator:
+        def __init__(self, corpus, term_index, count_index):
+            if not path.exists(corpus):
+                raise FileNotFoundError(f'Could not open file {corpus}')
 
-        Keyword arguments:
-        corpus -- The path+filename of the file.
-        term_index -- The column position of the word.
-        count_index -- The column position of the frequency count.
+            self.term_index = term_index
+            self.count_index = count_index
+            self.f = open(corpus, 'r')
 
-        Return:
-        True if file loaded, or False if file not found.
-        """
-        if not path.exists(corpus):
-            return False
-        with open(corpus, "r") as infile:
-            for line in infile:
+        def __iter__(self):
+            return self
+
+        def __next__(self):
+            line = self.f.readline()
+            if line:
                 line_parts = line.rstrip().split(" ")
                 if len(line_parts) >= 2:
-                    key = line_parts[term_index]
-                    count = helpers.try_parse_int64(line_parts[count_index])
+                    key = line_parts[self.term_index]
+                    count = helpers.try_parse_int64(line_parts[self.count_index])
                     if count is not None:
-                        self.create_dictionary_entry(key, count)
+                        return key, count, None
+            raise StopIteration
+
+    class CsvFileIterator:
+        def __init__(self, corpus, word_col='word', count_col='count', canonical_form_col='canonical_word'):
+            if not path.exists(corpus):
+                raise FileNotFoundError(f'Could not open file {corpus}')
+
+            self.f = csv.DictReader(open(corpus, 'r'))
+            self.word_col = word_col
+            self.count_col = count_col
+            self.canonical_form_col = canonical_form_col
+
+        def __iter__(self):
+            return self
+
+        def __next__(self):
+            line = self.next(self.f)
+            count = helpers.try_parse_int64(line[self.count_col])
+            if count is not None:
+                return line[self.word_col], \
+                       count, \
+                       line[self.canonical_form_col] if self.canonical_form_col in line else None
+
+    def load_dictionary(self, word_iterator):
+        """
+        Load multiple dictionary entries from a file of word/frequency
+        count pairs. Merges with any dictionary data already loaded.
+
+        Args:
+            word_iterator:
+
+        Returns:
+            None
+        """
+
+        for key, count, _ in word_iterator:
+            self.create_dictionary_entry(key, count)
+
         return True
 
     def lookup(self, phrase, verbosity, max_edit_distance=None,
