@@ -1,8 +1,7 @@
-import csv
 import sys
 from collections import defaultdict
 from enum import Enum
-from os import path
+
 
 import spellchecker.helpers as helpers
 from spellchecker.editdistance import DistanceAlgorithm, EditDistance
@@ -137,50 +136,6 @@ class SymSpell(object):
             else:
                 self._deletes[delete_hash] = [key]
         return True
-
-    class SpaceDelimitedFileIterator:
-        def __init__(self, corpus, term_index, count_index):
-            if not path.exists(corpus):
-                raise FileNotFoundError(f'Could not open file {corpus}')
-
-            self.term_index = term_index
-            self.count_index = count_index
-            self.f = open(corpus, 'r')
-
-        def __iter__(self):
-            return self
-
-        def __next__(self):
-            line = self.f.readline()
-            if line:
-                line_parts = line.rstrip().split(" ")
-                if len(line_parts) >= 2:
-                    key = line_parts[self.term_index]
-                    count = helpers.try_parse_int64(line_parts[self.count_index])
-                    if count is not None:
-                        return key, count, None
-            raise StopIteration
-
-    class CsvFileIterator:
-        def __init__(self, corpus, word_col='word', count_col='count', canonical_form_col='canonical_word'):
-            if not path.exists(corpus):
-                raise FileNotFoundError(f'Could not open file {corpus}')
-
-            self.f = csv.DictReader(open(corpus, 'r'))
-            self.word_col = word_col
-            self.count_col = count_col
-            self.canonical_form_col = canonical_form_col
-
-        def __iter__(self):
-            return self
-
-        def __next__(self):
-            line = self.next(self.f)
-            count = helpers.try_parse_int64(line[self.count_col])
-            if count is not None:
-                return line[self.word_col], \
-                       count, \
-                       line[self.canonical_form_col] if self.canonical_form_col in line else None
 
     def load_dictionary(self, word_iterator):
         """

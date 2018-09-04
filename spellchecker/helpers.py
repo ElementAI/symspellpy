@@ -1,4 +1,6 @@
+import csv
 import re
+from os import path
 
 
 def null_distance_results(string1, string2, max_distance):
@@ -70,3 +72,84 @@ def is_acronym(word):
         abCDe, abc12, ab12c
     """
     return re.match(r"\b[A-Z0-9]{2,}\b", word) is not None
+
+
+class SpaceDelimitedFileIterator:
+    """
+    Iterator on a space delimited file. This class is limited to single term entries.
+    If you want to support entries with multiple terms, use the CsvFileIterator.
+
+    The file format is similar to
+        the 23135851162
+        of 13151942776
+        and 12997637966
+        to 12136980858
+        a 9081174698
+        in 8469404971
+        travelling 6271787 traveling
+    where one column contains the term to lookup, the number of occurrences in the
+    source corpus and the 'canonical utterance' of the term (e.g traveling is preferred over
+    travelling). The canonical utterance is optional.
+    """
+
+    def __init__(self, corpus, term_index=0, count_index=1, canonical_term_index=None):
+        if not path.exists(corpus):
+            raise FileNotFoundError(f'Could not open file {corpus}')
+
+        self.term_index = term_index
+        self.count_index = count_index
+        self.canonical_term_index = canonical_term_index
+        self.f = open(corpus, 'r')
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        line = self.f.readline()
+        if line:
+            line_parts = line.rstrip().split(" ")
+            if len(line_parts) >= 2:
+                term = line_parts[self.term_index]
+                count = try_parse_int64(line_parts[self.count_index])
+                if count is not None:
+                    canonical_term = line_parts[self.canonical_term_index] if self.canonical_term_index else None
+                    return term, count, canonical_term
+        raise StopIteration
+
+
+class CsvFileIterator:
+    """
+       Iterate over a CSV file.
+
+       The file format must be similar to
+           the, 23135851162,
+           of, 13151942776,
+           and, 12997637966,
+           to, 12136980858,
+           a, 9081174698,
+           in, 8469404971,
+           travelling, 6271787, traveling
+       where the first column contains the term to lookup, the second column contains the number of
+       occurrences in the source corpus and the last column is the 'canonical utterance' of the term
+       (e.g traveling is preferred over travelling). The canonical utterance is optional.
+       """
+
+    def __init__(self, corpus, term_col='term', count_col='count', canonical_term_col='canonical_term'):
+        if not path.exists(corpus):
+            raise FileNotFoundError(f'Could not open file {corpus}')
+
+        self.f = csv.DictReader(open(corpus, 'r'))
+        self.term_col = term_col
+        self.count_col = count_col
+        self.canonical_term_col = canonical_term_col
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        line = next(self.f)
+        count = try_parse_int64(line[self.count_col])
+        if count is not None:
+            return line[self.term_col], \
+                   count, \
+                   line[self.canonical_term_col] if self.canonical_term_col in line else None
