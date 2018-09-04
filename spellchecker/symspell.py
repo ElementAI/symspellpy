@@ -62,7 +62,7 @@ class SymSpell(object):
         self._distance_algorithm = DistanceAlgorithm.DAMERUAUOSA
         self._max_length = 0
 
-    def create_dictionary_entry(self, key, count):
+    def create_dictionary_entry(self, key, count, canonical_term=None):
         """Create/Update an entry in the dictionary.
         For every word there are deletes with an edit distance of
         1..max_edit_distance created and added to the dictionary. Every delete
@@ -74,6 +74,8 @@ class SymSpell(object):
         Keyword arguments:
         key -- The word to add to dictionary.
         count -- The frequency count for word.
+        canonical_term -- This is an optional term (or multi-terms) that will used as suggestion instead of
+        the original word (e.g. Saint-Laurent instead of St-Laurent). By default, the key value is used
 
         Return:
         True if the word was added as a new correctly spelled word, or
@@ -105,12 +107,30 @@ class SymSpell(object):
                 self._below_threshold_words[key] = count
                 return False
         elif key in self._words:
-            count_previous = self._words[key]
+            count_previous, former_canonical_term = self._words[key]
             # just update count if it's an already added above threshold word
             count = (count_previous + count
                      if sys.maxsize - count_previous > count
                      else sys.maxsize)
-            self._words[key] = count
+
+            def get_canonical_term(key, former_canonical_term, canonical_term):
+                """
+                If there are many conflicting canonical terms for the same key, use the latest non-null one or
+                the key value.
+                Args:
+                    key: the term that's being searched for
+                    former_canonical_term: the former canonical term for the term
+                    canonical_term: the new proposed canonical term
+
+                Returns:
+                    the canonical term for the given term
+                """
+                if former_canonical_term == key or not canonical_term:
+                    return key
+                else:
+                    return canonical_term
+
+            self._words[key] = count, get_canonical_term(key, former_canonical_term, canonical_term)
             return False
         elif count < self._count_threshold:
             # new or existing below threshold word
@@ -118,7 +138,7 @@ class SymSpell(object):
             return False
 
         # what we have at this point is a new, above threshold word
-        self._words[key] = count
+        self._words[key] = count, canonical_term if canonical_term else key
 
         # edits/suggestions are created only once, no matter how often word
         # occurs. edits/suggestions are created as soon as the word occurs
@@ -192,8 +212,8 @@ class SymSpell(object):
         # quick look for exact match
         suggestion_count = 0
         if phrase in self._words:
-            suggestion_count = self._words[phrase]
-            suggestions.append(SuggestItem(phrase, 0, suggestion_count))
+            suggestion_count, canonical_term = self._words[phrase]
+            suggestions.append(SuggestItem(canonical_term, 0, suggestion_count))
             # early exit - return exact match, unless caller wants all matches
             if verbosity != Verbosity.ALL:
                 return early_exit()
@@ -337,8 +357,8 @@ class SymSpell(object):
                     # if verbosity<ALL (note: max_edit_distance_2 will always
                     # equal max_edit_distance when Verbosity.ALL)
                     if distance <= max_edit_distance_2:
-                        suggestion_count = self._words[suggestion]
-                        si = SuggestItem(suggestion, distance, suggestion_count)
+                        suggestion_count, canonical_term = self._words[suggestion]
+                        si = SuggestItem(canonical_term, distance, suggestion_count)
                         if suggestions:
                             if verbosity == Verbosity.CLOSEST:
                                 # we will calculate DamLev distance only to the
