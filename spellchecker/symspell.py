@@ -1,6 +1,7 @@
 import sys
 from collections import defaultdict
 from enum import Enum
+from typing import Iterable
 
 
 import spellchecker.helpers as helpers
@@ -62,26 +63,28 @@ class SymSpell(object):
         self._distance_algorithm = DistanceAlgorithm.DAMERUAUOSA
         self._max_length = 0
 
-    def create_dictionary_entry(self, key, count, canonical_term=None):
-        """Create/Update an entry in the dictionary.
-        For every word there are deletes with an edit distance of
-        1..max_edit_distance created and added to the dictionary. Every delete
+    def create_dictionary_entry(self, key: str, count: int, canonical_term: str=None) -> bool:
+        """
+        Create/Update an entry in the dictionary.
+        For every word there are deletes with an edit distance of 1..max_edit_distance
+        created and added to the dictionary. Every delete
         entry has a suggestions list, which points to the original term(s) it
         was created from. The dictionary may be dynamically updated (word
         frequency and new words) at any time by calling
         create_dictionary_entry
 
-        Keyword arguments:
-        key -- The word to add to dictionary.
-        count -- The frequency count for word.
-        canonical_term -- This is an optional term (or multi-terms) that will used as suggestion instead of
+       Args:
+           key: The word to add to dictionary.
+           count: The frequency count for word.
+           canonical_term: This is an optional term (or multi-terms) that will used as suggestion instead of
         the original word (e.g. Saint-Laurent instead of St-Laurent). By default, the key value is used
 
-        Return:
+       Returns:
         True if the word was added as a new correctly spelled word, or
         False if the word is added as a below threshold word, or updates an
         existing correctly spelled word.
-        """
+       """
+
         if count <= 0:
             # no point doing anything if count is zero, as it can't change
             # anything
@@ -113,10 +116,11 @@ class SymSpell(object):
                      if sys.maxsize - count_previous > count
                      else sys.maxsize)
 
-            def get_canonical_term(key, former_canonical_term, canonical_term):
+            def get_canonical_term(key: str, former_canonical_term: str, canonical_term: str) -> str:
                 """
                 If there are many conflicting canonical terms for the same key, use the latest non-null one or
                 the key value.
+
                 Args:
                     key: the term that's being searched for
                     former_canonical_term: the former canonical term for the term
@@ -157,13 +161,13 @@ class SymSpell(object):
                 self._deletes[delete_hash] = [key]
         return True
 
-    def load_dictionary(self, word_iterator):
+    def load_dictionary(self, word_iterator: Iterable[tuple]) -> None:
         """
         Load multiple dictionary entries from a file of word/frequency
         count pairs. Merges with any dictionary data already loaded.
 
         Args:
-            word_iterator:
+            word_iterator: an iterator on the dictionary to load
 
         Returns:
             None
@@ -171,8 +175,6 @@ class SymSpell(object):
 
         for key, count, _ in word_iterator:
             self.create_dictionary_entry(key, count)
-
-        return True
 
     def lookup(self, phrase, verbosity, max_edit_distance=None,
                include_unknown=False):
