@@ -172,8 +172,8 @@ class SymSpell(object):
 
         """
 
-        for key, count, _ in word_iterator:
-            self.create_dictionary_entry(key, count)
+        for key, count, canonical_term in word_iterator:
+            self.create_dictionary_entry(key, count, canonical_term)
 
     def lookup(self, phrase, verbosity, max_edit_distance=None,
                include_unknown=False):
@@ -192,6 +192,7 @@ class SymSpell(object):
         A list of SuggestItem object representing suggested correct spellings
         for the phrase word, sorted by edit distance, and secondarily by count
         frequency.
+
         """
         if max_edit_distance is None:
             max_edit_distance = self._max_dictionary_edit_distance
