@@ -1,10 +1,12 @@
+import csv
 import inspect
 import sys
+import tempfile
 import unittest
 from os import pardir, path
 
 
-from spellchecker.helpers import SpaceDelimitedFileIterator
+from spellchecker.helpers import CsvFileIterator, SpaceDelimitedFileIterator
 from spellchecker.symspell import SymSpell, Verbosity
 
 
@@ -24,6 +26,7 @@ class TestSpellChecker(unittest.TestCase):
         self.test_lookup_should_replicate_noisy_results()
         self.test_lookup_compound()
         self.test_lookup_compound_ignore_non_words()
+        self.test_lookup_with_canonical_term()
 
     def test_words_with_shared_prefix_should_retain_counts(self):
         print('  - %s' % inspect.stack()[0][3])
@@ -273,6 +276,22 @@ class TestSpellChecker(unittest.TestCase):
         results = sym_spell.lookup_compound(typo, edit_distance_max, True)
         self.assertEqual(1, len(results))
         self.assertEqual(correction, results[0].term)
+
+    def test_lookup_with_canonical_term(self):
+        with tempfile.NamedTemporaryFile('w') as fp:
+            col_names = ['term', 'count', 'canonical_term']
+            csv_writer = csv.DictWriter(fp, fieldnames=col_names)
+            csv_writer.writeheader()
+            canonical_term = 'canonical test'
+            for _ in range(10):
+                csv_writer.writerow({'term': 'test', 'count': 1, 'canonical_term': canonical_term})
+            fp.flush()
+
+            sym_spell = SymSpell()
+            sym_spell.load_dictionary(CsvFileIterator(fp.name))
+            suggestions = sym_spell.lookup('Test', Verbosity.CLOSEST)
+            self.assertEqual(1, len(suggestions))
+            self.assertEqual(suggestions[0].term, canonical_term)
 
 
 if __name__ == "__main__":
