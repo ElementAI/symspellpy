@@ -4,6 +4,7 @@ import unittest
 from os import pardir, path
 
 
+from spellchecker.helpers import SpaceDelimitedFileIterator
 from spellchecker.symspell import SymSpell, Verbosity
 
 
@@ -159,7 +160,8 @@ class TestSpellChecker(unittest.TestCase):
         prefix_length = 7
         verbosity = Verbosity.CLOSEST
         sym_spell = SymSpell(83000, edit_distance_max, prefix_length)
-        sym_spell.load_dictionary(dictionary_path, 0, 1)
+        dict_iter = SpaceDelimitedFileIterator(dictionary_path, 0, 1)
+        sym_spell.load_dictionary(dict_iter)
 
         test_list = []
         with open(query_path, "r") as infile:
@@ -182,7 +184,8 @@ class TestSpellChecker(unittest.TestCase):
         edit_distance_max = 2
         prefix_length = 7
         sym_spell = SymSpell(83000, edit_distance_max, prefix_length)
-        sym_spell.load_dictionary(dictionary_path, 0, 1)
+        dict_iter = SpaceDelimitedFileIterator(dictionary_path, 0, 1)
+        sym_spell.load_dictionary(dict_iter)
 
         typo = ("whereis th elove hehad dated forImuch of thepast who "
                 "couqdn'tread in sixthgrade and ins pired him")
@@ -223,7 +226,8 @@ class TestSpellChecker(unittest.TestCase):
         edit_distance_max = 2
         prefix_length = 7
         sym_spell = SymSpell(83000, edit_distance_max, prefix_length)
-        sym_spell.load_dictionary(dictionary_path, 0, 1)
+        dict_iter = SpaceDelimitedFileIterator(dictionary_path, 0, 1)
+        sym_spell.load_dictionary(dict_iter)
 
         typo = ("whereis th elove 123 hehad dated forImuch of THEPAST who "
                 "couqdn'tread in SIXTHgrade and ins pired him")

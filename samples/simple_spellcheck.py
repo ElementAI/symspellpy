@@ -17,12 +17,8 @@ def main():
                          prefix_length)
     # load dictionary
     dictionary_path = pkg_resources.resource_filename('spellchecker', 'frequency_dictionary_en_82_765.txt')
-
-    term_index = 0  # column of the term in the dictionary text file
-    count_index = 1  # column of the term frequency in the dictionary text file
-    if not sym_spell.load_dictionary(dictionary_path, term_index, count_index):
-        print("Dictionary file not found")
-        return
+    iterator = SymSpell.SpaceDelimitedFileIterator(0, 1, dictionary_path)
+    sym_spell.load_dictionary(iterator)
 
     # lookup suggestions for single-word input strings
     input_term = "memebers"  # misspelling of "members"

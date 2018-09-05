@@ -1,7 +1,8 @@
 import sys
 from collections import defaultdict
 from enum import Enum
-from os import path
+from typing import Iterable
+
 
 import spellchecker.helpers as helpers
 from spellchecker.editdistance import DistanceAlgorithm, EditDistance
@@ -62,24 +63,29 @@ class SymSpell(object):
         self._distance_algorithm = DistanceAlgorithm.DAMERUAUOSA
         self._max_length = 0
 
-    def create_dictionary_entry(self, key, count):
+    def create_dictionary_entry(self, key: str, count: int, canonical_term: str = None) -> bool:
         """Create/Update an entry in the dictionary.
-        For every word there are deletes with an edit distance of
-        1..max_edit_distance created and added to the dictionary. Every delete
+
+        For every word there are deletes with an edit distance of 1..max_edit_distance
+        created and added to the dictionary. Every delete
         entry has a suggestions list, which points to the original term(s) it
         was created from. The dictionary may be dynamically updated (word
         frequency and new words) at any time by calling
         create_dictionary_entry
 
-        Keyword arguments:
-        key -- The word to add to dictionary.
-        count -- The frequency count for word.
+        Args:
+            key: The word to add to dictionary.
+            count: The frequency count for word.
+            canonical_term: This is an optional term (or multi-terms) that will used as suggestion instead of
+                the original word (e.g. Saint-Laurent instead of St-Laurent). By default, the key value is used
 
-        Return:
-        True if the word was added as a new correctly spelled word, or
-        False if the word is added as a below threshold word, or updates an
-        existing correctly spelled word.
-        """
+        Returns:
+            True if the word was added as a new correctly spelled word, or
+            False if the word is added as a below threshold word, or updates an
+                existing correctly spelled word.
+
+       """
+
         if count <= 0:
             # no point doing anything if count is zero, as it can't change
             # anything
@@ -105,12 +111,31 @@ class SymSpell(object):
                 self._below_threshold_words[key] = count
                 return False
         elif key in self._words:
-            count_previous = self._words[key]
+            count_previous, former_canonical_term = self._words[key]
             # just update count if it's an already added above threshold word
             count = (count_previous + count
                      if sys.maxsize - count_previous > count
                      else sys.maxsize)
-            self._words[key] = count
+
+            def get_canonical_term(key: str, former_canonical_term: str, canonical_term: str) -> str:
+                """
+                If there are many conflicting canonical terms for the same key, use the latest non-null one or
+                the key value.
+
+                Args:
+                    key: the term that's being searched for
+                    former_canonical_term: the former canonical term for the term
+                    canonical_term: the new proposed canonical term
+
+                Returns:
+                    the canonical term for the given term
+                """
+                if former_canonical_term == key or not canonical_term:
+                    return key
+                else:
+                    return canonical_term
+
+            self._words[key] = count, get_canonical_term(key, former_canonical_term, canonical_term)
             return False
         elif count < self._count_threshold:
             # new or existing below threshold word
@@ -118,7 +143,7 @@ class SymSpell(object):
             return False
 
         # what we have at this point is a new, above threshold word
-        self._words[key] = count
+        self._words[key] = count, canonical_term if canonical_term else key
 
         # edits/suggestions are created only once, no matter how often word
         # occurs. edits/suggestions are created as soon as the word occurs
@@ -137,29 +162,18 @@ class SymSpell(object):
                 self._deletes[delete_hash] = [key]
         return True
 
-    def load_dictionary(self, corpus, term_index, count_index):
-        """Load multiple dictionary entries from a file of word/frequency
+    def load_dictionary(self, word_iterator: Iterable[tuple]):
+        """
+        Load multiple dictionary entries from a file of word/frequency
         count pairs. Merges with any dictionary data already loaded.
 
-        Keyword arguments:
-        corpus -- The path+filename of the file.
-        term_index -- The column position of the word.
-        count_index -- The column position of the frequency count.
+        Args:
+            word_iterator: an iterator on the dictionary to load
 
-        Return:
-        True if file loaded, or False if file not found.
         """
-        if not path.exists(corpus):
-            return False
-        with open(corpus, "r") as infile:
-            for line in infile:
-                line_parts = line.rstrip().split(" ")
-                if len(line_parts) >= 2:
-                    key = line_parts[term_index]
-                    count = helpers.try_parse_int64(line_parts[count_index])
-                    if count is not None:
-                        self.create_dictionary_entry(key, count)
-        return True
+
+        for key, count, _ in word_iterator:
+            self.create_dictionary_entry(key, count)
 
     def lookup(self, phrase, verbosity, max_edit_distance=None,
                include_unknown=False):
@@ -199,8 +213,8 @@ class SymSpell(object):
         # quick look for exact match
         suggestion_count = 0
         if phrase in self._words:
-            suggestion_count = self._words[phrase]
-            suggestions.append(SuggestItem(phrase, 0, suggestion_count))
+            suggestion_count, canonical_term = self._words[phrase]
+            suggestions.append(SuggestItem(canonical_term, 0, suggestion_count))
             # early exit - return exact match, unless caller wants all matches
             if verbosity != Verbosity.ALL:
                 return early_exit()
@@ -344,8 +358,8 @@ class SymSpell(object):
                     # if verbosity<ALL (note: max_edit_distance_2 will always
                     # equal max_edit_distance when Verbosity.ALL)
                     if distance <= max_edit_distance_2:
-                        suggestion_count = self._words[suggestion]
-                        si = SuggestItem(suggestion, distance, suggestion_count)
+                        suggestion_count, canonical_term = self._words[suggestion]
+                        si = SuggestItem(canonical_term, distance, suggestion_count)
                         if suggestions:
                             if verbosity == Verbosity.CLOSEST:
                                 # we will calculate DamLev distance only to the
