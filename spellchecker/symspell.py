@@ -63,9 +63,9 @@ class SymSpell(object):
         self._distance_algorithm = DistanceAlgorithm.DAMERUAUOSA
         self._max_length = 0
 
-    def create_dictionary_entry(self, key: str, count: int, canonical_term: str=None) -> bool:
-        """
-        Create/Update an entry in the dictionary.
+    def create_dictionary_entry(self, key: str, count: int, canonical_term: str = None) -> bool:
+        """Create/Update an entry in the dictionary.
+
         For every word there are deletes with an edit distance of 1..max_edit_distance
         created and added to the dictionary. Every delete
         entry has a suggestions list, which points to the original term(s) it
@@ -73,16 +73,17 @@ class SymSpell(object):
         frequency and new words) at any time by calling
         create_dictionary_entry
 
-       Args:
-           key: The word to add to dictionary.
-           count: The frequency count for word.
-           canonical_term: This is an optional term (or multi-terms) that will used as suggestion instead of
-        the original word (e.g. Saint-Laurent instead of St-Laurent). By default, the key value is used
+        Args:
+            key: The word to add to dictionary.
+            count: The frequency count for word.
+            canonical_term: This is an optional term (or multi-terms) that will used as suggestion instead of
+                the original word (e.g. Saint-Laurent instead of St-Laurent). By default, the key value is used
 
-       Returns:
-        True if the word was added as a new correctly spelled word, or
-        False if the word is added as a below threshold word, or updates an
-        existing correctly spelled word.
+        Returns:
+            True if the word was added as a new correctly spelled word, or
+            False if the word is added as a below threshold word, or updates an
+                existing correctly spelled word.
+
        """
 
         if count <= 0:
@@ -161,7 +162,7 @@ class SymSpell(object):
                 self._deletes[delete_hash] = [key]
         return True
 
-    def load_dictionary(self, word_iterator: Iterable[tuple]) -> None:
+    def load_dictionary(self, word_iterator: Iterable[tuple]):
         """
         Load multiple dictionary entries from a file of word/frequency
         count pairs. Merges with any dictionary data already loaded.
@@ -169,8 +170,6 @@ class SymSpell(object):
         Args:
             word_iterator: an iterator on the dictionary to load
 
-        Returns:
-            None
         """
 
         for key, count, _ in word_iterator:

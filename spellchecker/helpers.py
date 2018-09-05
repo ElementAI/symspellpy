@@ -92,7 +92,7 @@ class SpaceDelimitedFileIterator:
     travelling). The canonical utterance is optional.
     """
 
-    def __init__(self, corpus, term_index=0, count_index=1, canonical_term_index=None):
+    def __init__(self, corpus: str, term_index: int=0, count_index: int=1, canonical_term_index: int=None):
         if not path.exists(corpus):
             raise FileNotFoundError(f'Could not open file {corpus}')
 
@@ -119,22 +119,22 @@ class SpaceDelimitedFileIterator:
 
 class CsvFileIterator:
     """
-       Iterate over a CSV file.
+    Iterate over a CSV file.
+    The file format must be similar to
+       the, 23135851162,
+       of, 13151942776,
+       and, 12997637966,
+       to, 12136980858,
+       a, 9081174698,
+       in, 8469404971,
+       travelling, 6271787, traveling
+    where the first column contains the term to lookup, the second column contains the number of
+    occurrences in the source corpus and the last column is the 'canonical utterance' of the term
+    (e.g traveling is preferred over travelling). The canonical utterance is optional.
+    """
 
-       The file format must be similar to
-           the, 23135851162,
-           of, 13151942776,
-           and, 12997637966,
-           to, 12136980858,
-           a, 9081174698,
-           in, 8469404971,
-           travelling, 6271787, traveling
-       where the first column contains the term to lookup, the second column contains the number of
-       occurrences in the source corpus and the last column is the 'canonical utterance' of the term
-       (e.g traveling is preferred over travelling). The canonical utterance is optional.
-       """
-
-    def __init__(self, corpus, term_col='term', count_col='count', canonical_term_col='canonical_term'):
+    def __init__(self, corpus: str, term_col: str='term', count_col: str='count',
+                 canonical_term_col: str='canonical_term'):
         if not path.exists(corpus):
             raise FileNotFoundError(f'Could not open file {corpus}')
 
