@@ -156,10 +156,7 @@ class SymSpell(object):
         edits = self.edits_prefix(key)
         for delete in edits:
             delete_hash = self.get_str_hash(delete)
-            if delete_hash in self._deletes:
-                self._deletes[delete_hash].append(key)
-            else:
-                self._deletes[delete_hash] = [key]
+            self._deletes[delete_hash].append(key)
         return True
 
     def load_dictionary(self, word_iterator: Iterable[tuple]):
