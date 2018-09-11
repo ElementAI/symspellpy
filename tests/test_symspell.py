@@ -1,5 +1,4 @@
 import csv
-import inspect
 import sys
 import tempfile
 from os import pardir, path
@@ -10,7 +9,6 @@ from spellchecker.symspell import SymSpell, Verbosity
 
 
 def test_words_with_shared_prefix_should_retain_counts():
-    print('  - %s' % inspect.stack()[0][3])
     sym_spell = SymSpell(16, 1, 3)
     sym_spell.create_dictionary_entry("pipe", 5)
     sym_spell.create_dictionary_entry("pips", 10)
@@ -38,7 +36,6 @@ def test_words_with_shared_prefix_should_retain_counts():
 
 
 def test_add_additional_counts_should_not_add_word_again():
-    print('  - %s' % inspect.stack()[0][3])
     sym_spell = SymSpell()
     word = "hello"
     sym_spell.create_dictionary_entry(word, 11)
@@ -49,7 +46,6 @@ def test_add_additional_counts_should_not_add_word_again():
 
 
 def test_add_additional_counts_should_increase_count():
-    print('  - %s' % inspect.stack()[0][3])
     sym_spell = SymSpell()
     word = "hello"
     sym_spell.create_dictionary_entry(word, 11)
@@ -64,7 +60,6 @@ def test_add_additional_counts_should_increase_count():
 
 
 def test_add_additional_counts_should_not_overflow():
-    print('  - %s' % inspect.stack()[0][3])
     sym_spell = SymSpell()
     word = "hello"
     sym_spell.create_dictionary_entry(word, sys.maxsize - 10)
@@ -79,7 +74,6 @@ def test_add_additional_counts_should_not_overflow():
 
 
 def test_verbosity_should_control_lookup_results():
-    print('  - %s' % inspect.stack()[0][3])
     sym_spell = SymSpell()
     sym_spell.create_dictionary_entry("steam", 1)
     sym_spell.create_dictionary_entry("steams", 2)
@@ -94,7 +88,6 @@ def test_verbosity_should_control_lookup_results():
 
 
 def test_lookup_should_return_most_frequent():
-    print('  - %s' % inspect.stack()[0][3])
     sym_spell = SymSpell()
     sym_spell.create_dictionary_entry("steama", 4)
     sym_spell.create_dictionary_entry("steamb", 6)
@@ -106,7 +99,6 @@ def test_lookup_should_return_most_frequent():
 
 
 def test_lookup_should_find_exact_match():
-    print('  - %s' % inspect.stack()[0][3])
     sym_spell = SymSpell()
     sym_spell.create_dictionary_entry("steama", 4)
     sym_spell.create_dictionary_entry("steamb", 6)
@@ -117,7 +109,6 @@ def test_lookup_should_find_exact_match():
 
 
 def test_lookup_should_not_return_non_word_delete():
-    print('  - %s' % inspect.stack()[0][3])
     sym_spell = SymSpell(16, 2, 7, 10)
     sym_spell.create_dictionary_entry("pawn", 10)
     result = sym_spell.lookup("paw", Verbosity.TOP, 0)
@@ -127,7 +118,6 @@ def test_lookup_should_not_return_non_word_delete():
 
 
 def test_lookup_should_not_return_low_count_word():
-    print('  - %s' % inspect.stack()[0][3])
     sym_spell = SymSpell(16, 2, 7, 10)
     sym_spell.create_dictionary_entry("pawn", 1)
     result = sym_spell.lookup("pawn", Verbosity.TOP, 0)
@@ -135,7 +125,6 @@ def test_lookup_should_not_return_low_count_word():
 
 
 def test_lookup_should_not_return_low_count_word_that_are_also_delete_word():
-    print('  - %s' % inspect.stack()[0][3])
     sym_spell = SymSpell(16, 2, 7, 10)
     sym_spell.create_dictionary_entry("flame", 20)
     sym_spell.create_dictionary_entry("flam", 1)
@@ -144,7 +133,6 @@ def test_lookup_should_not_return_low_count_word_that_are_also_delete_word():
 
 
 def test_lookup_should_replicate_noisy_results():
-    print('  - %s' % inspect.stack()[0][3])
     cwd = path.realpath(path.dirname(__file__))
     dictionary_path = path.realpath(path.join(
         cwd, pardir, "spellchecker", "frequency_dictionary_en_82_765.txt"))
@@ -171,7 +159,6 @@ def test_lookup_should_replicate_noisy_results():
 
 
 def test_lookup_compound():
-    print('  - %s' % inspect.stack()[0][3])
     cwd = path.realpath(path.dirname(__file__))
     dictionary_path = path.realpath(path.join(
         cwd, pardir, "spellchecker", "frequency_dictionary_en_82_765.txt"))
@@ -214,7 +201,6 @@ def test_lookup_compound():
 
 
 def test_lookup_compound_ignore_non_words():
-    print('  - %s' % inspect.stack()[0][3])
     cwd = path.realpath(path.dirname(__file__))
     dictionary_path = path.realpath(path.join(
         cwd, pardir, "spellchecker", "frequency_dictionary_en_82_765.txt"))
