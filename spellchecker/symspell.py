@@ -200,8 +200,7 @@ class SymSpell(object):
 
         def early_exit():
             if include_unknown and not suggestions:
-                suggestions.append(SuggestItem(phrase, max_edit_distance + 1,
-                                               0))
+                suggestions.append(SuggestItem(phrase, phrase, phrase, max_edit_distance + 1, 0))
             return suggestions
 
         # early exit - word is too big to possibly match any words
@@ -212,7 +211,7 @@ class SymSpell(object):
         suggestion_count = 0
         if phrase in self._words:
             suggestion_count, canonical_term = self._words[phrase]
-            suggestions.append(SuggestItem(canonical_term, 0, suggestion_count))
+            suggestions.append(SuggestItem(phrase, phrase, canonical_term, 0, suggestion_count))
             # early exit - return exact match, unless caller wants all matches
             if verbosity != Verbosity.ALL:
                 return early_exit()
@@ -357,7 +356,7 @@ class SymSpell(object):
                     # equal max_edit_distance when Verbosity.ALL)
                     if distance <= max_edit_distance_2:
                         suggestion_count, canonical_term = self._words[suggestion]
-                        si = SuggestItem(canonical_term, distance, suggestion_count)
+                        si = SuggestItem(phrase, suggestion, canonical_term, distance, suggestion_count)
                         if suggestions:
                             if verbosity == Verbosity.CLOSEST:
                                 # we will calculate DamLev distance only to the
@@ -430,11 +429,11 @@ class SymSpell(object):
         for i, __ in enumerate(term_list_1):
             if ignore_non_words:
                 if helpers.try_parse_int64(term_list_1[i]) is not None:
-                    suggestion_parts.append(SuggestItem(term_list_1[i], 0, 0))
+                    suggestion_parts.append(SuggestItem(term_list_1[i], term_list_1[i], term_list_1[i], 0, 0))
                     continue
                 # if re.match(r"\b[A-Z]{2,}\b", term_list_2[i]):
                 if helpers.is_acronym(term_list_2[i]):
-                    suggestion_parts.append(SuggestItem(term_list_2[i], 0, 0))
+                    suggestion_parts.append(SuggestItem(term_list_2[i], term_list_2[i], term_list_2[i], 0, 0))
                     continue
             suggestions = self.lookup(term_list_1[i], Verbosity.TOP,
                                       max_edit_distance)
@@ -448,7 +447,7 @@ class SymSpell(object):
                     if suggestions:
                         best_2 = suggestions[0]
                     else:
-                        best_2 = SuggestItem(term_list_1[i],
+                        best_2 = SuggestItem(term_list_1[i], term_list_1[i], term_list_1[i],
                                              max_edit_distance + 1, 0)
                     # make sure we're comparing with the lowercase form of the
                     # previous word
@@ -497,15 +496,17 @@ class SymSpell(object):
                                 # select best suggestion for split pair
                                 tmp_term = (suggestions_1[0].term + " " +
                                             suggestions_2[0].term)
+                                match_term = (suggestions_1[0].matching_term + " " +
+                                              suggestions_2[0].matching_term)
                                 tmp_distance = distance_comparer.compare(
-                                    term_list_1[i], tmp_term,
+                                    term_list_1[i], match_term,
                                     max_edit_distance)
                                 if tmp_distance < 0:
                                     tmp_distance = max_edit_distance + 1
                                 tmp_count = min(suggestions_1[0].count,
                                                 suggestions_2[0].count)
                                 suggestion_split = SuggestItem(
-                                    tmp_term, tmp_distance, tmp_count)
+                                    term_list_1[i], match_term, tmp_term, tmp_distance, tmp_count)
                                 suggestions_split.append(suggestion_split)
                                 # early termination of split
                                 if suggestion_split.distance == 1:
@@ -516,18 +517,18 @@ class SymSpell(object):
                         suggestions_split.sort()
                         suggestion_parts.append(suggestions_split[0])
                     else:
-                        si = SuggestItem(term_list_1[i],
+                        si = SuggestItem(term_list_1[i], term_list_1[i], term_list_1[i],
                                          max_edit_distance + 1, 0)
                         suggestion_parts.append(si)
                 else:
-                    si = SuggestItem(term_list_1[i], max_edit_distance + 1, 0)
+                    si = SuggestItem(term_list_1[i], term_list_1[i], term_list_1[i], max_edit_distance + 1, 0)
                     suggestion_parts.append(si)
         joined_term = ""
         joined_count = sys.maxsize
         for si in suggestion_parts:
             joined_term += si.term + " "
             joined_count = min(joined_count, si.count)
-        suggestion = SuggestItem(joined_term.rstrip(),
+        suggestion = SuggestItem(joined_term.rstrip(), joined_term.rstrip(), joined_term.rstrip(),
                                  distance_comparer.compare(
                                      phrase, joined_term, 2 ** 31 - 1),
                                  joined_count)
@@ -605,43 +606,63 @@ class SymSpell(object):
 
 class SuggestItem(object):
     """Spelling suggestion returned from Lookup."""
-    def __init__(self, term, distance, count):
-        """Create a new instance of SuggestItem.
+    def __init__(self, input_term: str, matching_term: str, canonical_term: str, distance: int, count: int):
+        """Create a new instance of SuggestItem. The matching_term is the dictionary term that was close
+        enough to the input_term to generate this suggestion. On the other hand, the canonical_term is the
+        preferred term to use instead of the matching_term.
 
-        Keyword arguments:
-        term -- The suggested word.
-        distance -- Edit distance from search word.
-        count -- Frequency of suggestion in dictionary.
+         Args:
+             input_term: the term to spell check
+             matching_term: the dictionary term that generated this suggestion. This could be an alias of the
+                actual term to use (see canonical_term)
+             canonical_term: the term to use instead of the matching_term (e.g. using crossing instead of xsing,
+                Saint-Paul instead of St-Paul and so on)
+             distance: the edit distance from input_term and matching_term.
+             count: the frequency of matching_term in the dictionary.
+
         """
-        self._term = term
+        self._distance_algorithm = DistanceAlgorithm.DAMERUAUOSA
+        self._input_term = input_term
+        self._matching_term = matching_term
+        self._term = canonical_term
         self._distance = distance
         self._count = count
 
-    def __eq__(self, other):
-        """order by distance ascending, then by frequency count
+        distance_comparer = EditDistance(self._distance_algorithm)
+        # record the true distance of the input_term and the canonical_term
+        self._distance_to_canon = distance_comparer.compare(input_term, canonical_term, sys.maxsize)
+
+    def __eq__(self, other: 'SuggestItem') -> bool:
+        return self._distance == other.distance \
+               and self._distance_to_canon == other._distance_to_canon \
+               and self._count == other.count
+
+    def __lt__(self, other: 'SuggestItem') -> bool:
+        """order by distance ascending, then canon distance ascending and finally by frequency count
         descending
         """
         if self._distance == other.distance:
-            return self._count == other.count
-        else:
-            return self._distance == other.distance
-
-    def __lt__(self, other):
-        if self._distance == other.distance:
-            return self._count > other.count
+            if self._distance_to_canon == other._distance_to_canon:
+                return self._count > other.count
+            return self._distance_to_canon < other._distance_to_canon
         else:
             return self._distance < other.distance
 
     def __str__(self):
-        return f"{self._term} - Count: {self._count} - Distance: {self._distance}"
+        return f"Suggestion: {self._term} - Matching Term: {self._matching_term} - Count: {self._count} " \
+               f"- Distance: {self._distance}"
+
+    @property
+    def input_term(self):
+        return self._original_term
 
     @property
     def term(self):
         return self._term
 
-    @term.setter
-    def term(self, term):
-        self._term = term
+    @property
+    def matching_term(self):
+        return self._matching_term
 
     @property
     def distance(self):
@@ -654,7 +675,3 @@ class SuggestItem(object):
     @property
     def count(self):
         return self._count
-
-    @count.setter
-    def count(self, count):
-        self._count = count
