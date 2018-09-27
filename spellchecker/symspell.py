@@ -62,7 +62,6 @@ class SymSpell(object):
         self._compact_mask = (0xFFFFFFFF >> (3 + min(compact_level, 16))) << 2
         self._distance_algorithm = DistanceAlgorithm.DAMERUAUOSA
         self._max_length = 0
-        self._words_removed = {}
 
     def create_dictionary_entry(self, key: str, count: int, canonical_term: str = None) -> bool:
         """Create/Update an entry in the dictionary.
