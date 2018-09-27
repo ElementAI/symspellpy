@@ -6,7 +6,7 @@ import tempfile
 
 import pytest
 
-from spellchecker.helpers import CsvFileIterator, SpaceDelimitedFileIterator
+from spellchecker.helpers import CsvFileIterator, ListIterator, SpaceDelimitedFileIterator
 
 
 @pytest.mark.parametrize("line_count", [0, 1, 7, 1003])
@@ -27,6 +27,19 @@ def test_csv_reader(line_count):
             lines += 1
 
         assert lines == line_count
+
+
+def test_list_reader():
+    a_list = ["badminton", "goodminton", "extraminton"]
+
+    cpt = 0
+    for term, count, canonical_term in ListIterator(a_list):
+        assert term == a_list[cpt]
+        assert count == 1
+        assert term
+        cpt += 1
+
+    assert cpt == len(a_list)
 
 
 @pytest.mark.parametrize("line_count", [0, 1, 7, 1003])
