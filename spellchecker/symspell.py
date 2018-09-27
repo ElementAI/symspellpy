@@ -1,7 +1,7 @@
 import sys
 from collections import defaultdict
 from enum import Enum
-from typing import Iterable
+from typing import Iterable, List, Union
 
 
 import spellchecker.helpers as helpers
@@ -62,6 +62,7 @@ class SymSpell(object):
         self._compact_mask = (0xFFFFFFFF >> (3 + min(compact_level, 16))) << 2
         self._distance_algorithm = DistanceAlgorithm.DAMERUAUOSA
         self._max_length = 0
+        self._words_removed = {}
 
     def create_dictionary_entry(self, key: str, count: int, canonical_term: str = None) -> bool:
         """Create/Update an entry in the dictionary.
@@ -154,6 +155,7 @@ class SymSpell(object):
 
         # create deletes
         edits = self.edits_prefix(key)
+
         for delete in edits:
             delete_hash = self.get_str_hash(delete)
             self._deletes[delete_hash].append(key)
@@ -161,36 +163,33 @@ class SymSpell(object):
 
     def load_dictionary(self, word_iterator: Iterable[tuple]):
         """
-        Load multiple dictionary entries from a file of word/frequency
-        count pairs. Merges with any dictionary data already loaded.
+        Load multiple dictionary entries from a file of word/frequency count pairs. Merges with any dictionary data
+        already loaded.
 
         Args:
             word_iterator: an iterator on the dictionary to load
-
         """
 
         for key, count, canonical_term in word_iterator:
             self.create_dictionary_entry(key, count, canonical_term)
 
-    def lookup(self, phrase, verbosity, max_edit_distance=None,
-               include_unknown=False):
-        """Find suggested spellings for a given phrase word.
+    def lookup(self, phrase: str, verbosity: Verbosity, max_edit_distance: int=None, include_unknown: bool=False,
+               exclude_self: bool=False) -> List['SuggestItem']:
+        """
+        Find suggested spellings for a given phrase word.
 
-        Keyword arguments:
-        phrase -- The word being spell checked.
-        verbosity -- The value controlling the quantity/closeness of the
-            returned suggestions.
-        max_edit_distance -- The maximum edit distance between phrase and
-            suggested words.
-        include_unknown -- Include phrase word in suggestions, if no words
-            within edit distance found.
+        Args:
+            phrase: The word being spell checked.
+            verbosity: The value controlling the quantity/closeness of the returned suggestions.
+            max_edit_distance: The maximum edit distance between phrase and suggested words.
+            include_unknown: Include phrase word in suggestions, if no words within edit distance found.
+            exclude_self: Whether to return suggestion if the phrase is found directly in the dictionary.
 
         Return:
-        A list of SuggestItem object representing suggested correct spellings
-        for the phrase word, sorted by edit distance, and secondarily by count
-        frequency.
-
+            A list of SuggestItem object representing suggested correct spellings for the phrase word, sorted by edit
+            distance, and secondarily by count frequency.
         """
+
         if max_edit_distance is None:
             max_edit_distance = self._max_dictionary_edit_distance
         if max_edit_distance > self._max_dictionary_edit_distance:
@@ -200,16 +199,17 @@ class SymSpell(object):
 
         def early_exit():
             if include_unknown and not suggestions:
-                suggestions.append(SuggestItem(phrase, max_edit_distance + 1,
-                                               0))
+                suggestions.append(SuggestItem(phrase, max_edit_distance + 1, 0))
+
+            if exclude_self and phrase in [suggestion.term for suggestion in suggestions]:
+                suggestions.remove(next((suggestion for suggestion in suggestions if suggestion.term == phrase), None))
+
             return suggestions
 
         # early exit - word is too big to possibly match any words
         if phrase_len - max_edit_distance > self._max_length:
             return early_exit()
 
-        # quick look for exact match
-        suggestion_count = 0
         if phrase in self._words:
             suggestion_count, canonical_term = self._words[phrase]
             suggestions.append(SuggestItem(canonical_term, 0, suggestion_count))
@@ -238,6 +238,7 @@ class SymSpell(object):
             candidates.append(phrase[: phrase_prefix_len])
         else:
             candidates.append(phrase)
+
         distance_comparer = EditDistance(self._distance_algorithm)
         while candidate_pointer < len(candidates):
             candidate = candidates[candidate_pointer]
@@ -341,10 +342,8 @@ class SymSpell(object):
                         else:
                             # delete_in_suggestion_prefix is somewhat expensive,
                             # and only pays off when verbosity is TOP or CLOSEST
-                            if ((verbosity != Verbosity.ALL
-                                 and not self.delete_in_suggestion_prefix(
-                                     candidate, candidate_len, suggestion,
-                                     suggestion_len))
+                            if ((verbosity != Verbosity.ALL and not self.delete_in_suggestion_prefix(
+                                    candidate, candidate_len, suggestion, suggestion_len))
                                     or suggestion in considered_suggestions):
                                 continue
                             considered_suggestions.add(suggestion)
@@ -365,8 +364,7 @@ class SymSpell(object):
                                 if distance < max_edit_distance_2:
                                     suggestions = list()
                             elif verbosity == Verbosity.TOP:
-                                if (distance < max_edit_distance_2
-                                        or suggestion_count > suggestions[0].count):
+                                if distance < max_edit_distance_2 or suggestion_count > suggestions[0].count:
                                     max_edit_distance_2 = distance
                                     suggestions[0] = si
                                 continue
@@ -376,12 +374,10 @@ class SymSpell(object):
             # add edits: derive edits (deletes) from candidate (phrase) and
             # add them to candidates list. this is a recursive process until
             # the maximum edit distance has been reached
-            if (len_diff < max_edit_distance
-                    and candidate_len <= self._prefix_length):
+            if len_diff < max_edit_distance and candidate_len <= self._prefix_length:
                 # do not create edits with edit distance smaller than
                 # suggestions already found
-                if (verbosity != Verbosity.ALL
-                        and len_diff >= max_edit_distance_2):
+                if verbosity != Verbosity.ALL and len_diff >= max_edit_distance_2:
                     continue
                 for i in range(candidate_len):
                     delete = candidate[: i] + candidate[i + 1:]
@@ -390,6 +386,10 @@ class SymSpell(object):
                         candidates.append(delete)
         if len(suggestions) > 1:
             suggestions.sort()
+
+        if exclude_self and phrase in [suggestion.term for suggestion in suggestions]:
+            suggestions.remove(next((suggestion for suggestion in suggestions if suggestion.term == phrase), None))
+
         return suggestions
 
     def lookup_compound(self, phrase, max_edit_distance,

@@ -1,6 +1,7 @@
 import csv
 import re
 from os import path
+from typing import Dict, List
 
 
 def null_distance_results(string1, string2, max_distance):
@@ -153,3 +154,21 @@ class CsvFileIterator:
             return line[self.term_col], \
                    count, \
                    line[self.canonical_term_col] if self.canonical_term_col in line else None
+
+
+class ListIterator:
+    """
+    Iterate over a list for the SymSpell load_dictionary function.
+
+    Args:
+        corpus: A list of string to load in the SymSpell instance.
+    """
+    def __init__(self, corpus: List[str]):
+        self.term_index = 0
+        self.count_index = 1
+        self.canonical_term_index = None
+        self.f = corpus
+
+    def __iter__(self):
+        for word in self.f:
+            yield word.strip().lower(), 1, word
