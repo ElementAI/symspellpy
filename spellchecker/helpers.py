@@ -164,9 +164,6 @@ class ListIterator:
         corpus: A list of string to load in the SymSpell instance.
     """
     def __init__(self, corpus: List[str]):
-        self.term_index = 0
-        self.count_index = 1
-        self.canonical_term_index = None
         self.f = corpus
 
     def __iter__(self):

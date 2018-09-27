@@ -1,7 +1,7 @@
 import sys
 from collections import defaultdict
 from enum import Enum
-from typing import Iterable, List
+from typing import Iterable, List, Tuple
 
 
 import spellchecker.helpers as helpers
@@ -160,13 +160,19 @@ class SymSpell(object):
             self._deletes[delete_hash].append(key)
         return True
 
-    def load_dictionary(self, word_iterator: Iterable[tuple]):
+    def load_dictionary(self, word_iterator: Iterable[Tuple[str, int, str]]):
         """
-        Load multiple dictionary entries from a file of word/frequency count pairs. Merges with any dictionary data
-        already loaded.
+        Load multiple dictionary entries from an iterator. Merges with any dictionary data already loaded.
+
+        The iterator should return a tuple of 3 members, a string, an int and a string. The first string is the term
+        to add to the dictionary, the int is the occurrence for that term, and the second string is the canonical form
+        of that term.
+
+        Please note that if the same term is submitted multiple time SymSpell will automatically increase the
+        occurrence instead of duplicating the instance.
 
         Args:
-            word_iterator: an iterator on the dictionary to load
+            word_iterator: An iterator for the data to load.
         """
 
         for key, count, canonical_term in word_iterator:
