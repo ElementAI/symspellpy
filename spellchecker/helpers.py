@@ -1,7 +1,7 @@
 import csv
 import re
 from os import path
-from typing import Dict, List
+from typing import List
 
 
 def null_distance_results(string1, string2, max_distance):

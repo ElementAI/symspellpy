@@ -1,7 +1,7 @@
 import sys
 from collections import defaultdict
 from enum import Enum
-from typing import Iterable, List, Union
+from typing import Iterable, List
 
 
 import spellchecker.helpers as helpers
