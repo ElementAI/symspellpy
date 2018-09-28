@@ -24,6 +24,10 @@ jobs:
           name: Tests
           command: make test
 
+      - run:
+          name: Coveralls
+          command: coveralls
+
 workflows:
   version: 2
   tests:

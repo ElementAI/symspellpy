@@ -1,7 +1,7 @@
 default:
 	@echo "View Makefile for usage"
 
-sys_deps := poetry pre-commit
+sys_deps := poetry pre-commit coveralls
 
 bootstrap: ## Install system dependencies for this project (macOS or pyenv)
 	pip install -U $(sys_deps)
