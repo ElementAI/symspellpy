@@ -5,7 +5,7 @@ import tempfile
 from os import pardir, path
 
 
-from spellchecker.helpers import CsvFileIterator, SpaceDelimitedFileIterator
+from spellchecker.helpers import CsvFileIterator, ListIterator, SpaceDelimitedFileIterator
 from spellchecker.symspell import SymSpell, Verbosity
 
 
@@ -286,3 +286,15 @@ def test_lookup_with_canonical_term():
         suggestions = sym_spell.lookup('Test', Verbosity.CLOSEST)
         assert 1 == len(suggestions)
         assert suggestions[0].term == canonical_term
+
+
+def test_lookup_exclude_self():
+    a_list = ["badminton", "batminton", "godminton"]
+
+    sym_spell = SymSpell()
+    sym_spell.load_dictionary(ListIterator(a_list))
+    suggestions = sym_spell.lookup("badminton", Verbosity.ALL, exclude_self=True)
+
+    assert not next((sugg for sugg in suggestions if sugg.term == "badminton"), None)
+    assert next((sugg for sugg in suggestions if sugg.term == "batminton"))
+    assert next((sugg for sugg in suggestions if sugg.term == "godminton"))
