@@ -1,5 +1,6 @@
 # Spell Checker
 [![CircleCI](https://circleci.com/gh/ElementAI/eai-spellchecker/tree/master.svg?style=svg)](https://circleci.com/gh/ElementAI/eai-spellchecker/tree/master)
+[![Coverage Status](https://coveralls.io/repos/github/ElementAI/eai-spellchecker/badge.svg?branch=master)](https://coveralls.io/github/ElementAI/eai-spellchecker?branch=master)
 
 This code is based on [symspellpy](https://github.com/mammothb/symspellpy) a Python port of 
 [SymSpell](https://github.com/wolfgarbe/SymSpell) v6.3, which provides much higher speed and 
